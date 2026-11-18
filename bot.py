@@ -6,6 +6,9 @@ Buttons [中文] / [English] on the welcome message assign language roles.
 
 import os
 import logging
+import threading
+import time
+import urllib.request
 
 import discord
 from discord import app_commands
@@ -105,4 +108,35 @@ async def ping(interaction: discord.Interaction):
 
 
 if __name__ == "__main__":
+    # --- Render free tier: HTTP server on $PORT + self-ping to dodge 15-min sleep ---
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    class H(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"gewenbogpt-bot ok")
+
+        def log_message(self, *a):
+            pass
+
+    port = int(os.environ.get("PORT", "10000"))
+    httpd = HTTPServer(("0.0.0.0", port), H)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    log.info("http keepalive on :%s", port)
+
+    external = os.environ.get("RENDER_EXTERNAL_URL")
+    if external:
+
+        def self_ping():
+            while True:
+                try:
+                    urllib.request.urlopen(external, timeout=20)
+                except Exception:
+                    pass
+                time.sleep(600)  # every 10 min < 15-min sleep window
+
+        threading.Thread(target=self_ping, daemon=True).start()
+        log.info("self-ping armed: %s", external)
+
     bot.run(TOKEN)
