@@ -120,7 +120,7 @@ if __name__ == "__main__":
         def log_message(self, *a):
             pass
 
-    port = int(os.environ.get("PORT", "10000"))
+    port = int(os.environ.get("PORT", "7860"))
     httpd = HTTPServer(("0.0.0.0", port), H)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     log.info("http keepalive on :%s", port)
